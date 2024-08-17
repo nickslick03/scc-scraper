@@ -5,7 +5,6 @@ import exceljs from 'exceljs';
 import fs from "fs";
 import archiver from 'archiver';
 import { Response } from 'express';
-import { PassThrough } from 'stream';
 
 @Controller()
 export class AppController {
@@ -182,7 +181,7 @@ export class AppController {
 
     res.set({
       'Content-Type': 'application/zip',
-      'Content-Disposition': 'attachment; filename="files.zip"',
+      'Content-Disposition': `attachment; filename="output.zip"`,
     });
     await archive.finalize();
     res.send(Buffer.concat(chunks));
