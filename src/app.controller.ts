@@ -21,7 +21,7 @@ export class AppController {
 
     const sleep = async (seconds) => new Promise((res) => setTimeout(res, seconds * 1000));
 
-    const browser = await puppeteer.launch({ headless: true });
+    const browser = await puppeteer.launch({ headless: true, args: ['--no-sandbox'] });
     const mainPage = await browser.newPage();
     const url = body.sccUrl;
     await mainPage.goto(url);
