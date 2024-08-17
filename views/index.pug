@@ -1,5 +1,28 @@
 extends main
 
+block head
+    link(href="index.css" rel="stylesheet")
+
 block content
-    h1=message
-    p Lorem ipsum dolor sit amet consectetur adipisicing elit. Eligendi illo sunt similique vero voluptatem officiis explicabo sed eos? Similique quo sapiente recusandae natus eaque odit voluptas perspiciatis voluptate alias quas.
+    h1 RA Log Generator
+    p This website generates your 
+    ul 
+        li IC log
+        li Floor Directory 
+        li Named photos of your residents 
+    p from your Student Care Community page.
+    form(method="post")
+        label(for="sccUrl") Student Care Community URL: 
+            input(type="url" id="sccUrl" name="sccUrl" required)
+        label(for="username") Username: 
+            input(type="text" id="username" name="username" required)
+        label(for="password") Password: 
+            input(type="password" id="password" name="password" required)
+        button(type="submit") Submit
+    if errors 
+        div(id="errors")
+            for error in errors
+                div=error
+    if success
+        div(id="success")=success
+    
