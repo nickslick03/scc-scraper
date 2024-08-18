@@ -102,7 +102,11 @@ export class AppController {
       // const imageRes = await fetch(student.imageUrl);
       // const buffer = Buffer.from(await imageRes.arrayBuffer());
       // fs.writeFileSync(`output/profile_images/${student.fullName.split(/\s|,\s/g).join('_')}.jpg`, buffer);
-      await mainPage.goBack();
+      await Promise.all([
+        mainPage.waitForNavigation(),
+        mainPage.goBack()
+      ]);
+      await sleep(0.5);
     }
 
     await browser.close();
