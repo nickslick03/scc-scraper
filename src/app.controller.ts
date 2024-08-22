@@ -12,16 +12,14 @@ export class AppController {
 
   @Get()
   @Render('index')
-  getIndex() {
-
-  }
+  getIndex() {}
 
   @Post()
   async postIndex(@Body() body: { sccUrl: string, username: string, password: string }, @Res() res: Response) {
 
-    const sleep = async (seconds) => new Promise((res) => setTimeout(res, seconds * 1000));
+    const sleep = async (seconds: number) => new Promise((res) => setTimeout(res, seconds * 1000));
 
-    const browser = await puppeteer.launch({ headless: true, args: ['--no-sandbox'] });
+    const browser = await puppeteer.launch({ headless: false, args: ['--no-sandbox'] });
     const mainPage = await browser.newPage();
     const url = body.sccUrl;
     await mainPage.goto(url);
@@ -34,7 +32,10 @@ export class AppController {
       await mainPage.click('button[name=submit]');  
     } catch (e) {
       browser.close();
-      return { errors: ['URL is invalid'] };
+      res.render('index', { 
+        errors: ['URL is invalid'] 
+      });
+      return;
     }
 
     await sleep(5);
@@ -46,6 +47,10 @@ export class AppController {
       });
       return;
     }
+
+    const pages = await browser.pages();
+
+    console.log(pages);
 
     // create /output and /output/profile_images
     // if (!fs.existsSync('/output')) {
@@ -62,28 +67,18 @@ export class AppController {
           .click())
     ]);
 
-    const numOfStudents = await mainPage.evaluate(() =>
+    const studentUrls = await mainPage.evaluate(() =>
       [...document.querySelectorAll('a')]
         .filter(a => a.textContent.includes(', '))
-        .length
+        .map(a => a.href)
     );
-
     const students = [];
 
-    for (let i = 0; i < numOfStudents; i++) {
-      await Promise.all([
-        mainPage.waitForNavigation(),
-        mainPage.evaluate((i) =>
-          {
-            console.log([...document.querySelectorAll('a')]
-            .filter(a => a.textContent.includes(', '))[i])
-            return [...document.querySelectorAll('a')]
-            .filter(a => a.textContent.includes(', '))[i]
-            .click()}
-          , i)
-      ]);
+    for (let url of studentUrls) {
+      const studentPage = await browser.newPage();
+      await studentPage.goto(url);
 
-      const student = await mainPage.evaluate(() => {
+      const student = await studentPage.evaluate(() => {
         const studentCells = [...document.querySelectorAll('#R27143324834839494 .t15data')];
         const programCells = [...document.querySelectorAll('#R27348423794699608 .t15data')];
         const imageTag = studentCells[0].children[0] as HTMLImageElement;
@@ -102,11 +97,8 @@ export class AppController {
       // const imageRes = await fetch(student.imageUrl);
       // const buffer = Buffer.from(await imageRes.arrayBuffer());
       // fs.writeFileSync(`output/profile_images/${student.fullName.split(/\s|,\s/g).join('_')}.jpg`, buffer);
-      await Promise.all([
-        mainPage.waitForNavigation(),
-        mainPage.goBack()
-      ]);
-      await sleep(0.5);
+      await studentPage.close();
+      //await sleep(0.5);
     }
 
     await browser.close();
