@@ -1,7 +1,5 @@
 import { Body, Controller, Get, Post, Render, Res } from '@nestjs/common';
 import { AppService, student } from './app.service';
-import exceljs from 'exceljs';
-//import fs from 'fs';
 import { Response } from 'express';
 
 @Controller()
