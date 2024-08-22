@@ -13,9 +13,9 @@ block content
     p from your Student Care Community page.
     form(method="post")
         label(for="sccUrl") Student Care Community URL: 
-            input(type="url" id="sccUrl" name="sccUrl" required)
+            input(type="url" id="sccUrl" name="sccUrl" required value=(sccUrl || ''))
         label(for="username") Username: 
-            input(type="text" id="username" name="username" required)
+            input(type="text" id="username" name="username" required value=(username || ''))
         label(for="password") Password: 
             input(type="password" id="password" name="password" required)
         button(type="submit") Submit
@@ -24,5 +24,4 @@ block content
             for error in errors
                 div=error
     if success
-        div(id="success")=success
-    
+        div(id="success")=success    
