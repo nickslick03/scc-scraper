@@ -48,7 +48,8 @@ export class AppController {
     const FDWorkbook = await this.appService.createFD(students, imageBuffers);
 
     const FDbuffer = await FDWorkbook.xlsx.writeBuffer();
-    buffers.push({ buffer: Buffer.from(FDbuffer),
+    buffers.push({ 
+      buffer: Buffer.from(FDbuffer),
       name: `${this.appService.getFloor(students[0])}_Floor_Directory.xlsx`,
     });
     console.log('Created Floor Directory');
