@@ -18,14 +18,16 @@ const sleep = async (seconds: number) =>
 
 @Injectable()
 export class AppService {
-  async getStudents({sccUrl, username, password}: {sccUrl: string, username: string, password: string}): Promise<student[]> {
+
+  static sccUrl = 'https://apex.messiah.edu/apex/f?p=294';
+
+  async getStudents({username, password}: {username: string, password: string}): Promise<student[]> {
     const browser = await puppeteer.launch({
       headless: true,
       args: ['--no-sandbox'],
     });
     const mainPage = await browser.newPage();
-    const url = sccUrl;
-    await mainPage.goto(url);
+    await mainPage.goto(AppService.sccUrl);
 
     try {
       await mainPage.type('#username', username);

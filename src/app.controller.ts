@@ -12,7 +12,7 @@ export class AppController {
 
   @Post()
   async postIndex(
-    @Body() body: { sccUrl: string; username: string; password: string },
+    @Body() body: { username: string; password: string },
     @Res() res: Response,
   ) {
 
@@ -21,7 +21,6 @@ export class AppController {
       students = await this.appService.getStudents(body);
     } catch(e) {
       res.render('index', {
-        sccUrl: body.sccUrl,
         username: body.username,
         errors: [e]
       });

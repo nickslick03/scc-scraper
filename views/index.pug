@@ -4,7 +4,7 @@ block head
     link(href="index.css" rel="stylesheet")
 
 block content
-    h1 RA Log Generator
+    h1 Messiah University RA Log Generator
     p This website generates your 
     ul 
         li IC log
@@ -12,8 +12,6 @@ block content
         li Named photos of your residents 
     p from your Student Care Community page.
     form(method="post")
-        label(for="sccUrl") Student Care Community URL: 
-            input(type="url" id="sccUrl" name="sccUrl" required value=(sccUrl || ''))
         label(for="username") Username: 
             input(type="text" id="username" name="username" required value=(username || ''))
         label(for="password") Password: 
