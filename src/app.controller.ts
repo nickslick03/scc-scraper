@@ -15,14 +15,14 @@ export class AppController {
     @Body() body: { username: string; password: string },
     @Res() res: Response,
   ) {
-
+    console.log(body)
     let students: student[];
     try {
       students = await this.appService.getStudents(body);
     } catch(e) {
-      res.render('index', {
-        username: body.username,
-        errors: [e]
+      res.status(400);
+      res.send({
+        error: e.message
       });
       return;
     }
@@ -54,11 +54,12 @@ export class AppController {
     });
     console.log('Created Floor Directory');
 
+    const zip = await this.appService.createZip(buffers);
     res.set({
       'Content-Type': 'application/zip',
-      'Content-Disposition': `attachment; filename="output.zip"`,
+      'Content-Disposition': `attachment; filename="${this.appService.getFloor(students[0])}.zip"`,
+      'Content-Length': zip.length
     });
-    const zip = await this.appService.createZip(buffers);
     res.send(zip);
     return;
   }

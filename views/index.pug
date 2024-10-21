@@ -13,7 +13,7 @@ block content
                 li(data-bullet="📁") Floor Directory 
                 li(data-bullet="🖼️") Named photos of your residents 
             p from your Student Care Community page.
-        form(method="post" class="d-flex flex-column align-items-center")
+        form(method="post" class="d-flex flex-column align-items-center mb-4")
             div(class="mb-3")
                 label(for="username" class="form-label") Username
                 input(
@@ -31,10 +31,8 @@ block content
                     name="password"
                     required
                     class="form-control")
-            button(type="submit" class="btn btn-primary mt-2") Submit
-        if errors 
-            div(id="errors" class="text-center text-danger")
-                for error in errors
-                    div=error
-        if success
-            div(id="success" class="text-center text-success")=success    
+            input(type="submit" class="btn btn-primary mt-2" value="Generate")
+        div(id="loading" class="text-center text-primary")
+        div(id="error" class="text-center text-danger")
+        div(id="success" class="text-center text-success") 
+    script(src="index.js")

@@ -23,23 +23,25 @@ export class AppService {
 
   async getStudents({username, password}: {username: string, password: string}): Promise<student[]> {
     const browser = await puppeteer.launch({
-      headless: true,
+      headless: false,
       args: ['--no-sandbox'],
     });
     const mainPage = await browser.newPage();
-    await mainPage.goto(AppService.sccUrl);
-
+    await mainPage.goto(AppService.sccUrl, { waitUntil: 'networkidle0' });
+    console.log({username, password})
     try {
       await mainPage.type('#username', username);
       await mainPage.type('#password', password);
     } catch (e) {
+      await browser.close();
       throw new Error('URL is invalid');
     }
 
     await mainPage.click('button[name=submit]');
     await sleep(5);
     if ((await mainPage.title()) !== 'Students') {
-      throw new Error('Username or password is incorrect');
+      await browser.close();
+      throw new Error('Username or password is incorrect.');
     }
 
     // click advanced button to sort by room numbber
