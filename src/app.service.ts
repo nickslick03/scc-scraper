@@ -23,7 +23,7 @@ export class AppService {
 
   async getStudents({username, password}: {username: string, password: string}): Promise<student[]> {
     const browser = await puppeteer.launch({
-      headless: false,
+      headless: true,
       args: ['--no-sandbox'],
     });
     const mainPage = await browser.newPage();
