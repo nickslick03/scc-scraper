@@ -28,7 +28,6 @@ export class AppService {
     });
     const mainPage = await browser.newPage();
     await mainPage.goto(AppService.sccUrl, { waitUntil: 'networkidle0' });
-    console.log({username, password})
     try {
       await mainPage.type('#username', username);
       await mainPage.type('#password', password);
@@ -83,7 +82,6 @@ export class AppService {
           major: programCells[1].textContent,
         };
       });
-      console.log(student);
       students.push(student);
       await studentPage.close();
     }

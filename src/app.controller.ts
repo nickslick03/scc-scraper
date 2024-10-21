@@ -15,7 +15,6 @@ export class AppController {
     @Body() body: { username: string; password: string },
     @Res() res: Response,
   ) {
-    console.log(body)
     let students: student[];
     try {
       students = await this.appService.getStudents(body);
@@ -34,7 +33,6 @@ export class AppController {
       buffer: Buffer.from(await ICWorkbook.xlsx.writeBuffer()),
       name: `${this.appService.getFloor(students[0])}_IC_Log.xlsx`
     });
-    console.log('Created IC Log');
 
     const imageBuffers = await this.appService.getImageBuffers(students);
     for (let i = 0; i < students.length; i++) {
@@ -43,7 +41,6 @@ export class AppController {
         name: `photos/${students[i].fullName.split(/\s|,\s/g).join('_')}.jpg`,
       });
     }
-    console.log('Downloaded images');
 
     const FDWorkbook = await this.appService.createFD(students, imageBuffers);
 
@@ -52,7 +49,6 @@ export class AppController {
       buffer: Buffer.from(FDbuffer),
       name: `${this.appService.getFloor(students[0])}_Floor_Directory.xlsx`,
     });
-    console.log('Created Floor Directory');
 
     const zip = await this.appService.createZip(buffers);
     res.set({
