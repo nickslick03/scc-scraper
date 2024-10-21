@@ -19,6 +19,7 @@ export class AppController {
     try {
       students = await this.appService.getStudents(body);
     } catch(e) {
+      console.error((new Date()).toDateString(), e);
       res.status(400);
       res.send({
         error: e.message
