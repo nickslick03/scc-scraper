@@ -35,7 +35,17 @@ export class AppController {
       name: `${this.appService.getFloor(students[0])}_IC_Log.xlsx`
     });
 
-    const imageBuffers = await this.appService.getImageBuffers(students);
+    let imageBuffers: Buffer[];
+    try { 
+      imageBuffers = await this.appService.getImageBuffers(students);
+    } catch (e) {
+      console.error((new Date()).toDateString(), e);
+      res.status(400);
+      res.send({
+        error: 'Failed to get profile images from Messiah servers. Please try again later.'
+      });
+      return;
+    }
     for (let i = 0; i < students.length; i++) {
       buffers.push({ 
         buffer: imageBuffers[i],

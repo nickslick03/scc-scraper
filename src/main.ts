@@ -6,6 +6,9 @@ import { configDotenv } from 'dotenv';
 configDotenv();
 import { env } from 'process';
 
+// the messiah image url's certs are invalid, as fetched in app.service.ts line 132
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
