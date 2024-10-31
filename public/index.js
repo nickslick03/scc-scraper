@@ -1,23 +1,34 @@
 let isPosting = false;
 
+const socket = io(window.location.href);
+
+socket.on('id', id => {
+    $('[name="socketID"]').attr('value', id);
+});
+
 const loading = (() => {
-    const message = 'Generating Logs';
-    let elipsis = '';
+    let message = 'Logging in';
+    let elipsisNum = 0;
     let intervalID;
+
+    socket.on('updateProgress', update => {
+        $('#loading .text').text(update);
+    });
+
     return {
         start: () => {
-            elipsis = '';
-            $('#loading').text(message);
+            elipsisNum = 0;
+            $('#loading .text').text(message);
             intervalID = setInterval(() => {
-                elipsis = elipsis.length === 3
-                    ? ''
-                    : elipsis + '.';
-                $('#loading').text(message + elipsis);
+                $('#loading .text').removeClass(`elipsis${elipsisNum}`);
+                elipsisNum = (elipsisNum + 1) % 4;
+                $('#loading .text').addClass(`elipsis${elipsisNum}`);
             }, 1000);
         },
         stop: () => {
             clearInterval(intervalID);
-            $('#loading').text('');
+            $('#loading .text').text('');
+            $('#loading .text').removeClass(`elipsis${elipsisNum}`);
         }
     }
 })();

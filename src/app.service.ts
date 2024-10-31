@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import archiver from 'archiver';
 import puppeteer from 'puppeteer';
 import exceljs from 'exceljs';
+import { AppGateway } from './app.gateway';
 
 export interface student {
   imageUrl: string,
@@ -19,9 +20,12 @@ const sleep = async (seconds: number) =>
 @Injectable()
 export class AppService {
 
+  constructor(private readonly AppGateway: AppGateway) {}
+
   static sccUrl = 'https://apex.messiah.edu/apex/f?p=294';
 
-  async getStudents({username, password}: {username: string, password: string}): Promise<student[]> {
+  async getStudents({username, password, socketID}: {username: string, password: string, socketID: string}): Promise<student[]> {
+
     const browser = await puppeteer.launch({
       headless: true,
       args: ['--no-sandbox'],
@@ -72,6 +76,7 @@ export class AppService {
           ...document.querySelectorAll('#R27348423794699608 .t15data'),
         ];
         const imageTag = studentCells[0].children[0] as HTMLImageElement;
+
         return {
           imageUrl: imageTag.src,
           fullName: studentCells[1].children[0].textContent,
@@ -82,6 +87,12 @@ export class AppService {
           major: programCells[1].textContent,
         };
       });
+
+      this.AppGateway.emitEvent(
+        socketID,
+        'updateProgress',
+        `Gathering info on ${student.fullName}`);
+
       students.push(student);
       await studentPage.close();
     }

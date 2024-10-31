@@ -1,10 +1,11 @@
 import { Body, Controller, Get, Post, Render, Res } from '@nestjs/common';
 import { AppService, student } from './app.service';
 import { Response } from 'express';
+import { AppGateway } from './app.gateway';
 
 @Controller()
 export class AppController {
-  constructor(private readonly appService: AppService) {}
+  constructor(private readonly appService: AppService, private readonly appGateway: AppGateway) {}
 
   @Get()
   @Render('index')
@@ -12,12 +13,13 @@ export class AppController {
 
   @Post()
   async postIndex(
-    @Body() body: { username: string; password: string },
+    @Body() body: { username: string; password: string, socketID: string },
     @Res() res: Response,
   ) {
     let students: student[];
     try {
       students = await this.appService.getStudents(body);
+      this.appService
     } catch(e) {
       console.error((new Date()).toDateString(), e);
       res.status(400);
@@ -29,6 +31,7 @@ export class AppController {
 
     const buffers: {buffer: Buffer, name: string}[] = [];
 
+    this.appGateway.emitEvent(body.socketID, 'updateProgress', 'Creating IC log');
     const ICWorkbook = await this.appService.createICLog(students);
     buffers.push({ 
       buffer: Buffer.from(await ICWorkbook.xlsx.writeBuffer()),
@@ -36,7 +39,8 @@ export class AppController {
     });
 
     let imageBuffers: Buffer[];
-    try { 
+    try {
+      this.appGateway.emitEvent(body.socketID, 'updateProgress', 'Downloading student images');
       imageBuffers = await this.appService.getImageBuffers(students);
     } catch (e) {
       console.error((new Date()).toDateString(), e);
@@ -53,6 +57,7 @@ export class AppController {
       });
     }
 
+    this.appGateway.emitEvent(body.socketID, 'updateProgress', 'Creating floor directory');
     const FDWorkbook = await this.appService.createFD(students, imageBuffers);
 
     const FDbuffer = await FDWorkbook.xlsx.writeBuffer();

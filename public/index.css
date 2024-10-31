@@ -7,3 +7,20 @@
     content: attr(data-bullet); 
     margin-right: 10px;
 }
+
+#loading .elipsis1::after {
+    content: '.';
+}
+
+#loading .elipsis2::after {
+    content: '..';
+}
+
+#loading .elipsis3::after {
+    content: '...';
+}
+
+#loading .text::after {
+    position: absolute;
+    left: 100%;
+}
