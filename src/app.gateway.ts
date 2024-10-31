@@ -23,13 +23,11 @@ import {
     server: Server;
   
     handleConnection(client: Socket) {
-      console.log(`Client connected: ${client.id}`);
       this.clients.set(client.id, client);
       client.emit('id', client.id);
     }
   
     handleDisconnect(client: Socket) {
-      console.log(`Client disconnected: ${client.id}`);
       this.clients.delete(client.id);
     }
   
@@ -37,7 +35,6 @@ import {
       const client = this.clients.get(clientId);
       if (client) {
         client.emit(event, message);
-        console.log(`Message sent to client ${clientId}: ${message}`);
       } else {
         console.log(`Client with ID ${clientId} not found`);
       }
