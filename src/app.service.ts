@@ -5,27 +5,33 @@ import exceljs from 'exceljs';
 import { AppGateway } from './app.gateway';
 
 export interface student {
-  imageUrl: string,
-  fullName: string,
-  id: string,
-  email: string,
-  building: string,
-  room: string,
-  major: string
-};
+  imageUrl: string;
+  fullName: string;
+  id: string;
+  email: string;
+  building: string;
+  room: string;
+  major: string;
+}
 
 const sleep = async (seconds: number) =>
-  new Promise(res => setTimeout(res, seconds * 1000));
+  new Promise((res) => setTimeout(res, seconds * 1000));
 
 @Injectable()
 export class AppService {
-
   constructor(private readonly AppGateway: AppGateway) {}
 
   static sccUrl = 'https://apex.messiah.edu/apex/f?p=294';
 
-  async getStudents({username, password, socketID}: {username: string, password: string, socketID: string}): Promise<student[]> {
-
+  async getStudents({
+    username,
+    password,
+    socketID,
+  }: {
+    username: string;
+    password: string;
+    socketID: string;
+  }): Promise<student[]> {
     const browser = await puppeteer.launch({
       headless: true,
       args: ['--no-sandbox'],
@@ -103,13 +109,13 @@ export class AppService {
 
     } catch (e) {
       console.log(e);
-      throw new Error('Please tell web admin SCC Scraper isn\'t working.');
+      throw new Error(e?.message ?? 'Please tell web admin SCC Scraper isn\'t working.');
     } finally {
       await browser.close();
     }
   }
 
-  async createZip(buffers: {buffer: Buffer, name: string}[]) {
+  async createZip(buffers: { buffer: Buffer; name: string }[]) {
     const chunks: Buffer[] = [];
     const archive = archiver('zip', {
       zlib: { level: 9 },
@@ -126,10 +132,13 @@ export class AppService {
   }
 
   getFloor(student: student) {
-    return  student.building + '_' +
-    (isNaN(+student.room[0])
-      ? [...student.room].slice(0, 2).reverse().join('')
-      : student.room[0]);
+    return (
+      student.building +
+      '_' +
+      (isNaN(+student.room[0])
+        ? [...student.room].slice(0, 2).reverse().join('')
+        : student.room[0])
+    );
   }
 
   async createICLog(students: student[]) {
@@ -146,10 +155,10 @@ export class AppService {
 
   async getImageBuffers(students: student[]) {
     return await Promise.all(
-      students.map(async student => {
+      students.map(async (student) => {
         const imageRes = await fetch(student.imageUrl);
         return Buffer.from(await imageRes.arrayBuffer());
-      })
+      }),
     );
   }
 

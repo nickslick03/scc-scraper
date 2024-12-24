@@ -5,7 +5,10 @@ import { AppGateway } from './app.gateway';
 
 @Controller()
 export class AppController {
-  constructor(private readonly appService: AppService, private readonly appGateway: AppGateway) {}
+  constructor(
+    private readonly appService: AppService,
+    private readonly appGateway: AppGateway,
+  ) {}
 
   @Get()
   @Render('index')
@@ -13,55 +16,68 @@ export class AppController {
 
   @Post()
   async postIndex(
-    @Body() body: { username: string; password: string, socketID: string },
+    @Body() body: { username: string; password: string; socketID: string },
     @Res() res: Response,
   ) {
     let students: student[];
     try {
       students = await this.appService.getStudents(body);
-      this.appService
-    } catch(e) {
-      console.error((new Date()).toDateString(), e);
+      this.appService;
+    } catch (e) {
+      console.error(new Date().toDateString(), e);
       res.status(400);
       res.send({
-        error: e.message
+        error: e.message,
       });
       return;
     }
 
-    const buffers: {buffer: Buffer, name: string}[] = [];
+    const buffers: { buffer: Buffer; name: string }[] = [];
 
-    this.appGateway.emitEvent(body.socketID, 'updateProgress', 'Creating IC log');
+    this.appGateway.emitEvent(
+      body.socketID,
+      'updateProgress',
+      'Creating IC log',
+    );
     const ICWorkbook = await this.appService.createICLog(students);
-    buffers.push({ 
+    buffers.push({
       buffer: Buffer.from(await ICWorkbook.xlsx.writeBuffer()),
-      name: `${this.appService.getFloor(students[0])}_IC_Log.xlsx`
+      name: `${this.appService.getFloor(students[0])}_IC_Log.xlsx`,
     });
 
     let imageBuffers: Buffer[];
     try {
-      this.appGateway.emitEvent(body.socketID, 'updateProgress', 'Downloading student images');
+      this.appGateway.emitEvent(
+        body.socketID,
+        'updateProgress',
+        'Downloading student images',
+      );
       imageBuffers = await this.appService.getImageBuffers(students);
     } catch (e) {
-      console.error((new Date()).toDateString(), e);
+      console.error(new Date().toDateString(), e);
       res.status(400);
       res.send({
-        error: 'Failed to get profile images from Messiah servers. Please try again later.'
+        error:
+          'Failed to get profile images from Messiah servers. Please try again later.',
       });
       return;
     }
     for (let i = 0; i < students.length; i++) {
-      buffers.push({ 
+      buffers.push({
         buffer: imageBuffers[i],
         name: `photos/${students[i].fullName.split(/\s|,\s/g).join('_')}.jpg`,
       });
     }
 
-    this.appGateway.emitEvent(body.socketID, 'updateProgress', 'Creating floor directory');
+    this.appGateway.emitEvent(
+      body.socketID,
+      'updateProgress',
+      'Creating floor directory',
+    );
     const FDWorkbook = await this.appService.createFD(students, imageBuffers);
 
     const FDbuffer = await FDWorkbook.xlsx.writeBuffer();
-    buffers.push({ 
+    buffers.push({
       buffer: Buffer.from(FDbuffer),
       name: `${this.appService.getFloor(students[0])}_Floor_Directory.xlsx`,
     });
@@ -70,7 +86,7 @@ export class AppController {
     res.set({
       'Content-Type': 'application/zip',
       'Content-Disposition': `attachment; filename="${this.appService.getFloor(students[0])}.zip"`,
-      'Content-Length': zip.length
+      'Content-Length': zip.length,
     });
     res.send(zip);
     return;
