@@ -11,38 +11,38 @@ const loading = (() => {
   let elipsisNum = 0;
   let intervalID;
 
-    socket.on('updateProgress', update => {
-        message = update;
-        resetElipsis();
-    });
-    
-    const elipsisControl =  {
-        start: () => {
-            elipsisNum = 0;
-            $('#loading .text').text(message);
-            intervalID = setInterval(() => {
-                $('#loading .text').removeClass(`elipsis${elipsisNum}`);
-                elipsisNum = (elipsisNum + 1) % 4;
-                $('#loading .text').addClass(`elipsis${elipsisNum}`);
-            }, 1000);
-        },
-        stop: () => {
-            clearInterval(intervalID);
-            $('#loading .text').text('');
-            $('#loading .text').removeClass(`elipsis${elipsisNum}`);
-        },
-        setMessage: (msg) => {
-            message = msg;
-            $('#loading .text').text(message);
-        }
-    };
+  socket.on('updateProgress', (update) => {
+    message = update;
+    resetElipsis();
+  });
 
-    function resetElipsis() {
-        elipsisControl.stop();
-        elipsisControl.start();
-    }
+  const elipsisControl = {
+    start: () => {
+      elipsisNum = 0;
+      $('#loading .text').text(message);
+      intervalID = setInterval(() => {
+        $('#loading .text').removeClass(`elipsis${elipsisNum}`);
+        elipsisNum = (elipsisNum + 1) % 4;
+        $('#loading .text').addClass(`elipsis${elipsisNum}`);
+      }, 1000);
+    },
+    stop: () => {
+      clearInterval(intervalID);
+      $('#loading .text').text('');
+      $('#loading .text').removeClass(`elipsis${elipsisNum}`);
+    },
+    setMessage: (msg) => {
+      message = msg;
+      $('#loading .text').text(message);
+    },
+  };
 
-    return elipsisControl;
+  function resetElipsis() {
+    elipsisControl.stop();
+    elipsisControl.start();
+  }
+
+  return elipsisControl;
 })();
 
 $('form').on('submit', async function (e) {

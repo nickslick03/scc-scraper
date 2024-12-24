@@ -43,11 +43,11 @@ export class AppService {
       await browser.close();
       throw new Error('Messiah CAS is not loading. Please try again later.');
     }
-    
+
     try {
       await mainPage.type('#username', username);
       await mainPage.type('#password', password);
-  
+
       await mainPage.click('button[name=submit]');
       await sleep(5);
       if ((await mainPage.title()) !== 'Students') {
@@ -99,17 +99,19 @@ export class AppService {
         this.AppGateway.emitEvent(
           socketID,
           'updateProgress',
-          `Gathering info on ${student.fullName}`);
+          `Gathering info on ${student.fullName}`,
+        );
 
         students.push(student);
         await studentPage.close();
       }
 
       return students;
-
     } catch (e) {
       console.log(e);
-      throw new Error(e?.message ?? 'Please tell web admin SCC Scraper isn\'t working.');
+      throw new Error(
+        e?.message ?? "Please tell web admin SCC Scraper isn't working.",
+      );
     } finally {
       await browser.close();
     }
