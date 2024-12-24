@@ -31,75 +31,82 @@ export class AppService {
       args: ['--no-sandbox'],
     });
     const mainPage = await browser.newPage();
-    await mainPage.goto(AppService.sccUrl, { waitUntil: 'networkidle0' });
+    try {
+      await mainPage.goto(AppService.sccUrl, { waitUntil: 'networkidle0' });
+    } catch (e) {
+      await browser.close();
+      throw new Error('Messiah CAS is not loading. Please try again later.');
+    }
+    
     try {
       await mainPage.type('#username', username);
       await mainPage.type('#password', password);
+  
+      await mainPage.click('button[name=submit]');
+      await sleep(5);
+      if ((await mainPage.title()) !== 'Students') {
+        await browser.close();
+        throw new Error('Username or password is incorrect.');
+      }
+
+      // click advanced button to sort by room numbber
+      await Promise.all([
+        mainPage.waitForNavigation(),
+        mainPage.evaluate(() =>
+          [...document.querySelectorAll<HTMLAnchorElement>('.t15c a')]
+            .filter((a) => a.textContent === 'Advanced')[0]
+            .click(),
+        ),
+      ]);
+
+      const studentUrls = await mainPage.evaluate(() =>
+        [...document.querySelectorAll('a')]
+          .filter((a) => a.textContent.includes(', '))
+          .map((a) => a.href),
+      );
+      const students: student[] = [];
+
+      for (const url of studentUrls) {
+        const studentPage = await browser.newPage();
+        await studentPage.goto(url);
+
+        const student = await studentPage.evaluate(() => {
+          const studentCells = [
+            ...document.querySelectorAll('#R27143324834839494 .t15data'),
+          ];
+          const programCells = [
+            ...document.querySelectorAll('#R27348423794699608 .t15data'),
+          ];
+          const imageTag = studentCells[0].children[0] as HTMLImageElement;
+
+          return {
+            imageUrl: imageTag.src,
+            fullName: studentCells[1].children[0].textContent,
+            id: studentCells[2].textContent,
+            email: studentCells[9].children[0].textContent,
+            building: studentCells.at(-1).textContent.split(' ')[0],
+            room: studentCells.at(-1).textContent.split(' ').at(-1),
+            major: programCells[1].textContent,
+          };
+        });
+
+        this.AppGateway.emitEvent(
+          socketID,
+          'updateProgress',
+          `Gathering info on ${student.fullName}`);
+
+        students.push(student);
+        await studentPage.close();
+      }
+
+      return students;
+
     } catch (e) {
+      console.log(e);
+      throw new Error('Please tell web admin SCC Scraper isn\'t working.');
+    } finally {
       await browser.close();
-      throw new Error('URL is invalid');
     }
-
-    await mainPage.click('button[name=submit]');
-    await sleep(5);
-    if ((await mainPage.title()) !== 'Students') {
-      await browser.close();
-      throw new Error('Username or password is incorrect.');
-    }
-
-    // click advanced button to sort by room numbber
-    await Promise.all([
-      mainPage.waitForNavigation(),
-      mainPage.evaluate(() =>
-        [...document.querySelectorAll<HTMLAnchorElement>('.t15c a')]
-          .filter((a) => a.textContent === 'Advanced')[0]
-          .click(),
-      ),
-    ]);
-
-    const studentUrls = await mainPage.evaluate(() =>
-      [...document.querySelectorAll('a')]
-        .filter((a) => a.textContent.includes(', '))
-        .map((a) => a.href),
-    );
-    const students: student[] = [];
-
-    for (const url of studentUrls) {
-      const studentPage = await browser.newPage();
-      await studentPage.goto(url);
-
-      const student = await studentPage.evaluate(() => {
-        const studentCells = [
-          ...document.querySelectorAll('#R27143324834839494 .t15data'),
-        ];
-        const programCells = [
-          ...document.querySelectorAll('#R27348423794699608 .t15data'),
-        ];
-        const imageTag = studentCells[0].children[0] as HTMLImageElement;
-
-        return {
-          imageUrl: imageTag.src,
-          fullName: studentCells[1].children[0].textContent,
-          id: studentCells[2].textContent,
-          email: studentCells[9].children[0].textContent,
-          building: studentCells.at(-1).textContent.split(' ')[0],
-          room: studentCells.at(-1).textContent.split(' ').at(-1),
-          major: programCells[1].textContent,
-        };
-      });
-
-      this.AppGateway.emitEvent(
-        socketID,
-        'updateProgress',
-        `Gathering info on ${student.fullName}`);
-
-      students.push(student);
-      await studentPage.close();
-    }
-
-    await browser.close();
-
-    return students;
   }
 
   async createZip(buffers: {buffer: Buffer, name: string}[]) {

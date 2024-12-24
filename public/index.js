@@ -12,10 +12,11 @@ const loading = (() => {
     let intervalID;
 
     socket.on('updateProgress', update => {
-        $('#loading .text').text(update);
+        message = update;
+        resetElipsis();
     });
-
-    return {
+    
+    const elipsisControl =  {
         start: () => {
             elipsisNum = 0;
             $('#loading .text').text(message);
@@ -30,7 +31,14 @@ const loading = (() => {
             $('#loading .text').text('');
             $('#loading .text').removeClass(`elipsis${elipsisNum}`);
         }
+    };
+
+    function resetElipsis() {
+        elipsisControl.stop();
+        elipsisControl.start();
     }
+
+    return elipsisControl;
 })();
 
 $('form').on('submit', async function(e) {
