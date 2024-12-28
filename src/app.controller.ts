@@ -10,6 +10,14 @@ export class AppController {
     private readonly appGateway: AppGateway,
   ) {}
 
+  static studentFetchUrl = process.argv.find((arg) =>
+    /^studentFetchUrl=/.test(arg),
+  )
+    ? process.argv
+        .find((arg) => /^studentFetchUrl=/.test(arg))
+        .split('studentFetchUrl=')[1]
+    : null;
+
   @Get()
   @Render('index')
   getIndex() {}
@@ -19,9 +27,18 @@ export class AppController {
     @Body() body: { username: string; password: string; socketID: string },
     @Res() res: Response,
   ) {
+    const studentFetchUrl = AppController.studentFetchUrl;
     let students: student[];
     try {
-      students = await this.appService.getStudents(body);
+      if (studentFetchUrl)
+        this.appGateway.emitEvent(
+          body.socketID,
+          'updateProgress',
+          'Gathering student info',
+        );
+      students = await (studentFetchUrl
+        ? this.appService.getStudentsFetch({ ...body, url: studentFetchUrl })
+        : this.appService.getStudents(body));
       this.appService;
     } catch (e) {
       console.error(new Date().toDateString(), e);

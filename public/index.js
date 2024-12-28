@@ -57,32 +57,38 @@ $('form').on('submit', async function (e) {
   data.forEach((v, k) => (body[k] = v));
   $('input').attr('disabled', '');
   loading.setMessage('Logging in');
-  const res = await fetch('/', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(body),
-  });
-  if (!res.ok) {
-    const data = await res.json();
-    $('#error').text(data.error);
-  } else {
-    const blob = await res.blob();
-    const a = document.createElement('a');
-    const url = window.URL.createObjectURL(blob);
-    a.href = url;
-    a.download = res.headers
-      .get('Content-Disposition')
-      .split('filename=')[1]
-      .replace(/"/g, '');
-    document.body.appendChild(a);
-    a.click();
-    window.URL.revokeObjectURL(url);
-    document.body.removeChild(a);
-    $('#success').text('Creation successful!');
+  try {
+    const res = await fetch('/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) {
+      const data = await res.json();
+      $('#error').text(data.error);
+    } else {
+      const blob = await res.blob();
+      const a = document.createElement('a');
+      const url = window.URL.createObjectURL(blob);
+      a.href = url;
+      a.download = res.headers
+        .get('Content-Disposition')
+        .split('filename=')[1]
+        .replace(/"/g, '');
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      $('#success').text('Creation successful!');
+    }
+  } catch (e) {
+    console.log(e);
+    $('#error').text('Failed. Please try again later.');
+  } finally {
+    $('input').removeAttr('disabled');
+    loading.stop();
+    isPosting = false;
   }
-  $('input').removeAttr('disabled');
-  loading.stop();
-  isPosting = false;
 });

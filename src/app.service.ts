@@ -108,12 +108,37 @@ export class AppService {
 
       return students;
     } catch (e) {
-      console.log(e);
+      console.error(e);
       throw new Error(
         e?.message ?? "Please tell web admin SCC Scraper isn't working.",
       );
     } finally {
       await browser.close();
+    }
+  }
+
+  async getStudentsFetch({
+    url,
+    username,
+    password,
+    socketID,
+  }: {
+    url: string;
+    username: string;
+    password: string;
+    socketID: string;
+  }): Promise<student[]> {
+    const params = new URLSearchParams({ username, password });
+    const res = await fetch(`${url}/students`, {
+      method: 'POST',
+      body: params,
+    });
+    const json = (await res.json()) as student[] | string;
+    if (res.ok) {
+      return json as student[];
+    } else {
+      console.error(json);
+      throw new Error(json as string);
     }
   }
 
