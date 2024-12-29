@@ -52,18 +52,13 @@ $('form').on('submit', async function (e) {
   isPosting = true;
   $('#error').text('');
   $('#success').text('');
-  const data = new FormData(this);
-  const body = {};
-  data.forEach((v, k) => (body[k] = v));
+  const body = new URLSearchParams(new FormData(this));
   $('input').attr('disabled', '');
   loading.setMessage('Logging in');
   try {
-    const res = await fetch('/', {
+    const res = await fetch(location.href, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(body),
+      body,
     });
     if (!res.ok) {
       const data = await res.json();
@@ -92,3 +87,13 @@ $('form').on('submit', async function (e) {
     isPosting = false;
   }
 });
+
+(async () => {
+  try {
+    const res = await fetch(location.href, { method: 'PUT' });
+    const text = await res.text();
+    console.log(text);
+  } catch (e) {
+    console.error(e);
+  }
+})();
