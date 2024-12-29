@@ -87,13 +87,3 @@ $('form').on('submit', async function (e) {
     isPosting = false;
   }
 });
-
-(async () => {
-  try {
-    const res = await fetch(location.href, { method: 'PUT' });
-    const text = await res.text();
-    console.log(text);
-  } catch (e) {
-    console.error(e);
-  }
-})();
