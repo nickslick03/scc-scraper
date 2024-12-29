@@ -80,7 +80,7 @@ $('form').on('submit', async function (e) {
     }
   } catch (e) {
     console.log(e);
-    $('#error').text('Failed. Please try again later.');
+    $('#error').text('Failed. Please try a different browser or again later.');
   } finally {
     $('input').removeAttr('disabled');
     loading.stop();
