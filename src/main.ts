@@ -16,8 +16,6 @@ async function bootstrap() {
   app.useStaticAssets(join(__dirname, '..', 'views'));
   app.setViewEngine('pug');
 
-  console.log(process.argv);
-
   await app.listen(env.PORT || 3000);
 }
 bootstrap();

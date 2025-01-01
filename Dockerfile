@@ -20,4 +20,6 @@ COPY . .
 
 EXPOSE 3000
 
-CMD ["npm", "run", "start"]
+RUN npm run build
+
+CMD ["node", "dist/main"]

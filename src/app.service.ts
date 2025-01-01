@@ -3,6 +3,7 @@ import archiver from 'archiver';
 import puppeteer from 'puppeteer';
 import exceljs from 'exceljs';
 import { AppGateway } from './app.gateway';
+import { io } from 'socket.io-client';
 
 export interface student {
   imageUrl: string;
@@ -128,12 +129,18 @@ export class AppService {
     password: string;
     socketID: string;
   }): Promise<student[]> {
-    const params = new URLSearchParams({ username, password });
+    const socket = io(url);
+    const fetchSocketID: string = await new Promise(res => socket.on('id', (id) => res(id)));
+    socket.on('updateProgress', ((message: string) => {
+      this.AppGateway.emitEvent(socketID, 'updateProgress', message);
+    }).bind(this));
+    const params = new URLSearchParams({ username, password, socketID: fetchSocketID });
     const res = await fetch(`${url}/students`, {
       method: 'POST',
       body: params,
     });
     const json = (await res.json()) as student[] | string;
+    socket.disconnect();
     if (res.ok) {
       return json as student[];
     } else {
