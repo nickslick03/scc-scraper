@@ -10,9 +10,7 @@ export class AppController {
     private readonly appGateway: AppGateway,
   ) {}
 
-  static studentApiUrl = process.argv.find((arg) =>
-    /^studentApiUrl=/.test(arg),
-  )
+  static studentApiUrl = process.argv.find((arg) => /^studentApiUrl=/.test(arg))
     ? process.argv
         .find((arg) => /^studentApiUrl=/.test(arg))
         .split('studentApiUrl=')[1]

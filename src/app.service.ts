@@ -34,7 +34,7 @@ export class AppService {
     socketID: string;
   }): Promise<student[]> {
     const browser = await puppeteer.launch({
-      headless: true,
+      headless: false,
       args: ['--no-sandbox'],
     });
     const mainPage = await browser.newPage();
@@ -66,45 +66,75 @@ export class AppService {
         ),
       ]);
 
-      const studentUrls = await mainPage.evaluate(() =>
-        [...document.querySelectorAll('a')]
-          .filter((a) => a.textContent.includes(', '))
-          .map((a) => a.href),
-      );
       const students: student[] = [];
 
-      for (const url of studentUrls) {
-        const studentPage = await browser.newPage();
-        await studentPage.goto(url);
-
-        const student = await studentPage.evaluate(() => {
-          const studentCells = [
-            ...document.querySelectorAll('#R27143324834839494 .t15data'),
-          ];
-          const programCells = [
-            ...document.querySelectorAll('#R27348423794699608 .t15data'),
-          ];
-          const imageTag = studentCells[0].children[0] as HTMLImageElement;
-
-          return {
-            imageUrl: imageTag.src,
-            fullName: studentCells[1].children[0].textContent,
-            id: studentCells[2].textContent,
-            email: studentCells[9].children[0].textContent,
-            building: studentCells.at(-1).textContent.split(' ')[0],
-            room: studentCells.at(-1).textContent.split(' ').at(-1),
-            major: programCells[1].textContent,
-          };
-        });
-
-        this.AppGateway.emitEvent(
-          socketID,
-          'updateProgress',
-          `Gathering info on ${student.fullName}`,
+      while (true) {
+        const studentUrls = await mainPage.evaluate(() =>
+          [...document.querySelectorAll('a')]
+            .filter((a) => a.textContent.includes(', '))
+            .map((a) => a.href),
         );
 
-        students.push(student);
-        await studentPage.close();
+        for (const url of studentUrls.slice(0, 1)) {
+          const studentPage = await browser.newPage();
+          await studentPage.goto(url);
+
+          const student = await studentPage.evaluate(() => {
+            const studentCells = [
+              ...document.querySelectorAll('#R27143324834839494 .t15data'),
+            ];
+            const programCells = [
+              ...document.querySelectorAll('#R27348423794699608 .t15data'),
+            ];
+            const imageTag = studentCells[0].children[0] as HTMLImageElement;
+
+            return {
+              imageUrl: imageTag.src,
+              fullName: studentCells[1].children[0].textContent,
+              id: studentCells[2].textContent,
+              email: studentCells[9].children[0].textContent,
+              building: studentCells.at(-1).textContent.split(' ')[0],
+              room: studentCells.at(-1).textContent.split(' ').at(-1),
+              major: programCells[1].textContent,
+            };
+          });
+
+          this.AppGateway.emitEvent(
+            socketID,
+            'updateProgress',
+            `Gathering info on ${student.fullName}`,
+          );
+
+          students.push(student);
+        }
+
+        const isNext = await mainPage.evaluate(async (): Promise<boolean> => {
+          const nextButton = [
+            ...document.querySelectorAll('a.fielddata'),
+          ].filter((a) => a.textContent === 'Next')[0] as HTMLAnchorElement;
+          if (nextButton === undefined) return false;
+          return await new Promise((res) => {
+            const observer = new MutationObserver((records) => {
+              console.log(records);
+              if (
+                (
+                  records.at(-1).target as HTMLTableCellElement | undefined
+                )?.classList.contains('t15Body')
+              ) {
+                observer.disconnect();
+                res(true);
+              }
+            });
+            observer.observe(document.body, {
+              childList: true, // observe direct children
+              subtree: true, // and lower descendants too
+              characterDataOldValue: true, // pass old data to callback
+            });
+            nextButton.click();
+          });
+        });
+
+        if (!isNext) break;
       }
 
       return students;
@@ -130,11 +160,20 @@ export class AppService {
     socketID: string;
   }): Promise<student[]> {
     const socket = io(url);
-    const fetchSocketID: string = await new Promise(res => socket.on('id', (id) => res(id)));
-    socket.on('updateProgress', ((message: string) => {
-      this.AppGateway.emitEvent(socketID, 'updateProgress', message);
-    }).bind(this));
-    const params = new URLSearchParams({ username, password, socketID: fetchSocketID });
+    const fetchSocketID: string = await new Promise((res) =>
+      socket.on('id', (id) => res(id)),
+    );
+    socket.on(
+      'updateProgress',
+      ((message: string) => {
+        this.AppGateway.emitEvent(socketID, 'updateProgress', message);
+      }).bind(this),
+    );
+    const params = new URLSearchParams({
+      username,
+      password,
+      socketID: fetchSocketID,
+    });
     const res = await fetch(`${url}/students`, {
       method: 'POST',
       body: params,
