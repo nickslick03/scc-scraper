@@ -79,7 +79,7 @@ export class AppService {
             .map((a) => a.href),
         );
 
-        for (const url of studentUrls.slice(0, 4)) {
+        for (const url of studentUrls) {
           const studentPage = await browser.newPage();
           await studentPage.goto(url);
 

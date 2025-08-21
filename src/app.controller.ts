@@ -51,7 +51,7 @@ export class AppController {
     const ICWorkbook = await this.appService.createICLog(students);
     buffers.push({
       buffer: Buffer.from(await ICWorkbook.xlsx.writeBuffer()),
-      name: `${this.appService.getFloor(students[0])}_IC_Log.xlsx`,
+      name: `IC_Log.xlsx`,
     });
 
     try {
@@ -73,7 +73,7 @@ export class AppController {
     for (let i = 0; i < students.length; i++) {
       buffers.push({
         buffer: students[i].imageBuffer,
-        name: `photos/${students[i].fullName.split(/\s|,\s/g).join('_')}.jpg`,
+        name: `photos/${this.appService.getFloor(students[i], AppService.apartments.includes(students[i].building))}/${students[i].fullName.split(/\s|,\s/g).join('_')}.jpg`,
       });
     }
 
@@ -87,13 +87,13 @@ export class AppController {
     const FDbuffer = await FDWorkbook.xlsx.writeBuffer();
     buffers.push({
       buffer: Buffer.from(FDbuffer),
-      name: `${this.appService.getFloor(students[0])}_Floor_Directory.xlsx`,
+      name: `Floor_Directory.xlsx`,
     });
 
     const zip = await this.appService.createZip(buffers);
     res.set({
       'Content-Type': 'application/zip',
-      'Content-Disposition': `attachment; filename="${this.appService.getFloor(students[0])}.zip"`,
+      'Content-Disposition': `attachment; filename="Logs.zip"`,
       'Content-Length': zip.length,
     });
     res.send(zip);
