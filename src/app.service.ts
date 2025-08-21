@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { Injectable } from '@nestjs/common';
 import archiver from 'archiver';
 import puppeteer from 'puppeteer';
@@ -13,6 +14,7 @@ export interface student {
   building: string;
   room: string;
   major: string;
+  imageBuffer?: Buffer;
 }
 
 const sleep = async (seconds: number) =>
@@ -23,6 +25,8 @@ export class AppService {
   constructor(private readonly AppGateway: AppGateway) {}
 
   static sccUrl = 'https://apex.messiah.edu/apex/f?p=294';
+
+  static apartments = ['Smith', 'Mellinger', 'Fry', 'Kelly'];
 
   async getStudents({
     username,
@@ -75,7 +79,7 @@ export class AppService {
             .map((a) => a.href),
         );
 
-        for (const url of studentUrls.slice(0, 1)) {
+        for (const url of studentUrls.slice(0, 4)) {
           const studentPage = await browser.newPage();
           await studentPage.goto(url);
 
@@ -106,6 +110,8 @@ export class AppService {
           );
 
           students.push(student);
+
+          studentPage.close();
         }
 
         const isNext = await mainPage.evaluate(async (): Promise<boolean> => {
@@ -204,25 +210,70 @@ export class AppService {
     return Buffer.concat(chunks);
   }
 
-  getFloor(student: student) {
+  getFloor(student: student, dropFloorNumber = false) {
     return (
       student.building +
       '_' +
-      (isNaN(+student.room[0])
-        ? [...student.room].slice(0, 2).reverse().join('')
-        : student.room[0])
+      (dropFloorNumber
+        ? student.room.replaceAll(/\d/g, '')
+        : isNaN(+student.room[0])
+          ? [...student.room].slice(0, 2).reverse().join('')
+          : student.room[0])
     );
+  }
+
+  groupStudentsByFloor(students: student[]) {
+    const studentsByFloor = new Map<string, student[]>();
+    const sortedStudents = [...students].sort((a, b) => {
+      if (a.building < b.building) return -1;
+      if (a.building > b.building) return 1;
+      if (a.room < b.room) return -1;
+      else return 1;
+    });
+    for (const student of sortedStudents) {
+      const floor = this.getFloor(
+        student,
+        AppService.apartments.includes(student.building),
+      );
+      if (studentsByFloor.has(floor)) {
+        studentsByFloor.get(floor).push(student);
+      } else {
+        studentsByFloor.set(floor, [student]);
+      }
+    }
+    return studentsByFloor;
   }
 
   async createICLog(students: student[]) {
     const ICWorkbook = new exceljs.Workbook();
     await ICWorkbook.xlsx.readFile('templates/IC_Template.xlsx');
-    const ICWorksheet = ICWorkbook.getWorksheet('IC_Logs');
 
-    for (let i = 0; i < students.length; i++) {
-      ICWorksheet.getCell(`A${i + 3}`).value = students[i].room;
-      ICWorksheet.getCell(`B${i + 3}`).value = students[i].fullName;
+    const studentsByFloor = this.groupStudentsByFloor(students);
+
+    let floorIndex = 0;
+
+    for (const floor of studentsByFloor.keys()) {
+      const floorStudents = studentsByFloor.get(floor);
+      const ICWorksheet = ICWorkbook.getWorksheet(
+        `IC_Logs${floorIndex > 0 ? ` (${floorIndex + 1})` : ''}`,
+      );
+      ICWorksheet.name = this.getFloor(
+        floorStudents[0],
+        AppService.apartments.includes(floorStudents[0].building),
+      );
+
+      for (let i = 0; i < floorStudents.length; i++) {
+        ICWorksheet.getCell(`A${i + 3}`).value = floorStudents[i].room;
+        ICWorksheet.getCell(`B${i + 3}`).value = floorStudents[i].fullName;
+      }
+
+      floorIndex++;
     }
+
+    for (let i = floorIndex; i < 60; i++) {
+      ICWorkbook.getWorksheet(`IC_Logs (${i + 1})`).destroy();
+    }
+
     return ICWorkbook;
   }
 
@@ -230,47 +281,53 @@ export class AppService {
     return await Promise.all(
       students.map(async (student) => {
         const imageRes = await fetch(student.imageUrl);
-        return Buffer.from(await imageRes.arrayBuffer());
+        student.imageBuffer = Buffer.from(await imageRes.arrayBuffer());
       }),
     );
   }
 
-  async createFD(students: student[], imageBuffers: Buffer[]) {
+  async createFD(students: student[]) {
     const columns = [...'ABCDEF'];
-
     const FDWorkbook = new exceljs.Workbook();
-    const FDWorksheet = FDWorkbook.addWorksheet('Residents');
 
-    for (const col of columns) {
-      FDWorksheet.getColumn(col).width = 200 / 7;
-    }
+    const studentsByFloor = this.groupStudentsByFloor(students);
 
-    for (let i = 0; i < students.length; i++) {
-      const baseRow = Math.floor(i / columns.length) * 5 + 1;
-      const imageId = FDWorkbook.addImage({
-        buffer: imageBuffers[i],
-        extension: 'jpeg',
-      });
-      FDWorksheet.getRow(baseRow).height = 225;
-      FDWorksheet.addImage(imageId, {
-        tl: {
-          col: i % columns.length,
-          row: baseRow - 1,
-        },
-        ext: {
-          width: 200,
-          height: 200,
-        },
-        editAs: 'oneCell',
-      });
-      const col = columns[i % columns.length];
-      FDWorksheet.getCell(`${col}${baseRow + 1}`).value =
-        `Name: ${students[i].fullName}`;
-      FDWorksheet.getCell(`${col}${baseRow + 2}`).value =
-        `Room Number: ${students[i].room}`;
-      FDWorksheet.getCell(`${col}${baseRow + 3}`).value =
-        `Major: ${students[i].major}`;
-      FDWorksheet.getCell(`${col}${baseRow + 4}`).value = `Interests: `;
+    for (const floor of studentsByFloor.keys()) {
+
+      const floorStudents = studentsByFloor.get(floor);
+      const FDWorksheet = FDWorkbook.addWorksheet(floor);
+
+      for (const col of columns) {
+        FDWorksheet.getColumn(col).width = 200 / 7;
+      }
+
+      for (let i = 0; i < floorStudents.length; i++) {
+        const baseRow = Math.floor(i / columns.length) * 5 + 1;
+        const imageId = FDWorkbook.addImage({
+          buffer: floorStudents[i].imageBuffer,
+          extension: 'jpeg',
+        });
+        FDWorksheet.getRow(baseRow).height = 225;
+        FDWorksheet.addImage(imageId, {
+          tl: {
+            col: i % columns.length,
+            row: baseRow - 1,
+          },
+          ext: {
+            width: 200,
+            height: 200,
+          },
+          editAs: 'oneCell',
+        });
+        const col = columns[i % columns.length];
+        FDWorksheet.getCell(`${col}${baseRow + 1}`).value =
+          `Name: ${floorStudents[i].fullName}`;
+        FDWorksheet.getCell(`${col}${baseRow + 2}`).value =
+          `Room Number: ${floorStudents[i].room}`;
+        FDWorksheet.getCell(`${col}${baseRow + 3}`).value =
+          `Major: ${floorStudents[i].major}`;
+        FDWorksheet.getCell(`${col}${baseRow + 4}`).value = `Interests: `;
+      }
     }
 
     return FDWorkbook;

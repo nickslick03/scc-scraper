@@ -54,14 +54,13 @@ export class AppController {
       name: `${this.appService.getFloor(students[0])}_IC_Log.xlsx`,
     });
 
-    let imageBuffers: Buffer[];
     try {
       this.appGateway.emitEvent(
         body.socketID,
         'updateProgress',
         'Downloading student images',
       );
-      imageBuffers = await this.appService.getImageBuffers(students);
+      await this.appService.getImageBuffers(students);
     } catch (e) {
       console.error(new Date().toDateString(), e);
       res.status(400);
@@ -73,7 +72,7 @@ export class AppController {
     }
     for (let i = 0; i < students.length; i++) {
       buffers.push({
-        buffer: imageBuffers[i],
+        buffer: students[i].imageBuffer,
         name: `photos/${students[i].fullName.split(/\s|,\s/g).join('_')}.jpg`,
       });
     }
@@ -83,7 +82,7 @@ export class AppController {
       'updateProgress',
       'Creating floor directory',
     );
-    const FDWorkbook = await this.appService.createFD(students, imageBuffers);
+    const FDWorkbook = await this.appService.createFD(students);
 
     const FDbuffer = await FDWorkbook.xlsx.writeBuffer();
     buffers.push({
