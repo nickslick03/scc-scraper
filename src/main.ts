@@ -15,6 +15,7 @@ async function bootstrap() {
   app.useStaticAssets(join(__dirname, '..', 'public'));
   app.useStaticAssets(join(__dirname, '..', 'views'));
   app.setViewEngine('pug');
+  app.enableCors();
 
   await app.listen(env.PORT || 3000);
 }
