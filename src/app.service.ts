@@ -5,6 +5,7 @@ import puppeteer from 'puppeteer';
 import exceljs from 'exceljs';
 import { AppGateway } from './app.gateway';
 import { io } from 'socket.io-client';
+import { join } from 'path';
 
 export interface student {
   imageUrl: string;
@@ -246,7 +247,7 @@ export class AppService {
 
   async createICLog(students: student[]) {
     const ICWorkbook = new exceljs.Workbook();
-    await ICWorkbook.xlsx.readFile('templates/IC_Template.xlsx');
+    await ICWorkbook.xlsx.readFile(join(__dirname, '..', '..', 'public', 'IC_Template.xlsx'));
 
     const studentsByFloor = this.groupStudentsByFloor(students);
 
@@ -271,7 +272,7 @@ export class AppService {
     }
 
     for (let i = floorIndex; i < 60; i++) {
-      ICWorkbook.getWorksheet(`IC_Logs (${i + 1})`).destroy();
+      ICWorkbook.getWorksheet(`IC_Logs${i > 0 ? ` (${i + 1})` : ''}`).destroy();
     }
 
     return ICWorkbook;

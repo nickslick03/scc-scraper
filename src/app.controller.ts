@@ -2,6 +2,7 @@ import { Body, Controller, Get, Post, Render, Res } from '@nestjs/common';
 import { AppService, student } from './app.service';
 import { Response } from 'express';
 import { AppGateway } from './app.gateway';
+import { join } from 'path';
 
 @Controller()
 export class AppController {
@@ -18,7 +19,9 @@ export class AppController {
 
   @Get()
   @Render('index')
-  getIndex() {}
+  getIndex() {
+    console.log(join(__dirname, '..', '..', 'public', 'IC_Template.xlsx'));
+  }
 
   @Post()
   async postIndex(
